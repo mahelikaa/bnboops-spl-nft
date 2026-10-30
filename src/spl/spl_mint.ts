@@ -1,6 +1,5 @@
 import {
   address,
-  appendTransactionMessageInstruction,
   appendTransactionMessageInstructions,
   assertIsTransactionWithBlockhashLifetime,
   createKeyPairSignerFromBytes,
@@ -16,7 +15,7 @@ import {
 import wallet from "../../devnet-wallet.json";
 import {
   findAssociatedTokenPda,
-  getCreateAssociatedTokenInstructionAsync,
+  getCreateAssociatedTokenIdempotentInstructionAsync,
   getMintToInstruction,
   TOKEN_PROGRAM_ADDRESS,
 } from "@solana-program/token";
@@ -28,9 +27,10 @@ const rpcSubscriptions = createSolanaRpcSubscriptions(
 );
 
 const token_decimals = 1_000_000n;
+const TOKEN_SUPPLY = 1_000_000n;
 
-//paste your mint address got from spl_init.ts
-const mint = address("E2Jazz2VXcVL9RZkn6ZFA4q1YGvgEvrns3Gr6w72DC4w");
+//mint address from spl_init.ts
+const mint = address("EF8CeLCEfaEPRVEWxy671sDQXVNX2ehykv4re4y9ds7M");
 
 (async () => {
   try {
@@ -43,8 +43,22 @@ const mint = address("E2Jazz2VXcVL9RZkn6ZFA4q1YGvgEvrns3Gr6w72DC4w");
     });
     console.log(`Your ata is : ${ata}`);
 
-    // const createAtaIx =
-    // const mintToIx =
+    // idempotent, so re-running doesn't fail if the ata already exists
+    const createAtaIx = await getCreateAssociatedTokenIdempotentInstructionAsync(
+      {
+        mint,
+        owner: signer.address,
+        payer: signer,
+        ata,
+      },
+    );
+
+    const mintToIx = getMintToInstruction({
+      mint,
+      token: ata,
+      mintAuthority: signer,
+      amount: TOKEN_SUPPLY * token_decimals,
+    });
 
     const { value: latestBlockhash } = await rpc.getLatestBlockhash().send();
 
@@ -52,31 +66,36 @@ const mint = address("E2Jazz2VXcVL9RZkn6ZFA4q1YGvgEvrns3Gr6w72DC4w");
 
     const msgWithPayer = setTransactionMessageFeePayerSigner(signer, msg);
 
-    const msgWithLiftime = setTransactionMessageLifetimeUsingBlockhash(
+    const msgWithLifetime = setTransactionMessageLifetimeUsingBlockhash(
       latestBlockhash,
       msgWithPayer,
     );
 
-    // const txMessage = appendTransactionMessageInstructions(
-    //   [createAtaIx, mintToIx],
-    //   msgWithLiftime,
-    // );
+    const txMessage = appendTransactionMessageInstructions(
+      [createAtaIx, mintToIx],
+      msgWithLifetime,
+    );
 
-    // const signedTx = await signTransactionMessageWithSigners(txMessage);
+    const signedTx = await signTransactionMessageWithSigners(txMessage);
 
-    // assertIsTransactionWithBlockhashLifetime(signedTx);
+    assertIsTransactionWithBlockhashLifetime(signedTx);
 
-    // const signature = getSignatureFromTransaction(signedTx);
+    const signature = getSignatureFromTransaction(signedTx);
 
-    // const sendAndConfirm = sendAndConfirmTransactionFactory({
-    //   rpc,
-    //   rpcSubscriptions,
-    // });
+    const sendAndConfirm = sendAndConfirmTransactionFactory({
+      rpc,
+      rpcSubscriptions,
+    });
 
-    // await sendAndConfirm(signedTx, { commitment: "confirmed" });
+    await sendAndConfirm(signedTx, { commitment: "confirmed" });
 
-    // console.log(`mint txid: ${signature}`);
+    console.log(`Tokens minted: ${TOKEN_SUPPLY} BNBOOPS`);
+    console.log(`mint txid: ${signature}`);
+    console.log(
+      `Explorer: https://explorer.solana.com/tx/${signature}?cluster=devnet`,
+    );
   } catch (error) {
-    console.log(error);
+    console.error("Failed to mint tokens:", error);
+    process.exitCode = 1;
   }
 })();

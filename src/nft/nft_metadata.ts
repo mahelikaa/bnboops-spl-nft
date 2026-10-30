@@ -25,13 +25,27 @@ umi.use(signerIdentity(signer));
   try {
     //change the image uri to your image uri obtained from nft_image.ts
     const image =
-      "https://gateway.irys.xyz/5EDyiNrMWfhjdsEwXLrwkHPwZoZB2m1A2Kudrfxo1tpr";
+      "https://gateway.irys.xyz/6bWCZYXaeKUg27HZ4pddELehUKqGzn1QqnQQB17Ar8ef";
 
     //json scheme : https://www.metaplex.com/docs/smart-contracts/core/json-schema
-    //change the metadata
-    // const metadata =
-    // const myUri =
-    // console.log(`metadata uri: ${myUri} `);
+    const metadata = {
+      name: "BNBOOPS: Withdrawals Paused",
+      description:
+        "Day 0. One laptop, one oops, glass breaking. Devnet-only parody of the Oct 2026 Binance hack, not affiliated with Binance or BNB Chain.",
+      image,
+      attributes: [
+        { trait_type: "Status", value: "Investigating" },
+        { trait_type: "Withdrawals", value: "Paused" },
+        { trait_type: "Laptop", value: "Compromised" },
+        { trait_type: "Loot", value: "$3B Frozen" },
+      ],
+      properties: {
+        files: [{ uri: image, type: "image/png" }],
+        category: "image",
+      },
+    };
+    const myUri = await umi.uploader.uploadJson(metadata);
+    console.log(`metadata uri: ${myUri} `);
   } catch (error) {
     console.log("error", error);
   }
