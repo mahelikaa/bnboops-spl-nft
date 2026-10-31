@@ -3,7 +3,7 @@
 A parody SPL token and MPL Core NFT on Solana **devnet**, made the day after the Oct 2026 Binance hack.
 In case of oops, break glass.
 
-📝 Write-up: [Who Actually Controls a Solana Token?](https://medium.com/@imahelika/who-actually-controls-a-solana-token-5a82e94fbcae)
+📝 Write-up: [Who Actually Controls a Solana Token?](https://medium.com/@mahelikaa/who-actually-controls-a-solana-token-e57898a5cef8)
 
 ![BNBOOPS](src/art/bnboops.png)
 
